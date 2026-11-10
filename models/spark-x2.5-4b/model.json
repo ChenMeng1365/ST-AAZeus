@@ -1,0 +1,22 @@
+{
+  "id": "spark-x2.5-4b",
+  "display_name": "Spark-X2.5-4B (q4_k_m)",
+  "vendor": "科大讯飞 · 词元星火 (XHToken)",
+  "license": "Apache-2.0",
+  "source_url": "https://modelscope.cn/models/XHToken/Spark-X2.5-4B",
+  "file": "Spark-X2.5-4B-q4_k_m.gguf",
+  "hf_dir": "hf",
+  "variants": {
+    "q4_k_m": {"file": "Spark-X2.5-4B-q4_k_m.gguf"},
+    "fp16": {"file": "Spark-X2.5-4B-fp16.gguf"}
+  },
+  "engine": "llama-cpp-spark",
+  "quant": "q4_k_m",
+  "ctx_default": 4096,
+  "ngl": 99,
+  "threads": 8,
+  "temp": 1.0,
+  "top_p": 0.95,
+  "extra_args": [],
+  "notes": "36层 hidden 2560，10 头注意力（2 KV 头），混合注意力同 1.7B；Agent 场景首选——function call 可正确触发 tool_calls（1.7B 只识别不触发）；自我认知模糊；thinking 模式默认开启，API 请求传 chat_template_kwargs: {\"enable_thinking\": false} 可关闭。实测 RTX 4060 8GB q4_k_m 全 GPU 加载约 66 tok/s（原 sspark-x25 记录的 3.4 tok/s 系当时 CPU 回退异常，复测已排除）。fp16 变体 7.66GB 超出 8GB 显卡全卸载能力，仅适合部分卸载或 CPU 混合推理，本机默认用 q4_k_m。"
+}

@@ -1,0 +1,16 @@
+# 大文件不入库：模型权重与引擎二进制（来源见各 models/<id>/model.json 与 engines/<id>/ENGINE.md）
+models/**/*.gguf
+models/**/*.safetensors
+models/**/*.pth
+models/**/*.bin
+engines/*/bin/
+
+# 运行时产物
+.run/
+logs/
+*.log
+
+# 环境与临时文件
+.venv/
+__pycache__/
+.DS_Store

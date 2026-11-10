@@ -1,0 +1,22 @@
+{
+  "id": "spark-x2.5-1.7b",
+  "display_name": "Spark-X2.5-1.7B (q4_k_m)",
+  "vendor": "科大讯飞 · 词元星火 (XHToken)",
+  "license": "Apache-2.0",
+  "source_url": "https://modelscope.cn/models/XHToken/Spark-X2.5-1.7B",
+  "file": "Spark-X2.5-1.7B-q4_k_m.gguf",
+  "hf_dir": "hf",
+  "variants": {
+    "q4_k_m": {"file": "Spark-X2.5-1.7B-q4_k_m.gguf"},
+    "fp16": {"file": "Spark-X2.5-1.7B-fp16.gguf"}
+  },
+  "engine": "llama-cpp-spark",
+  "quant": "q4_k_m",
+  "ctx_default": 4096,
+  "ngl": 99,
+  "threads": 8,
+  "temp": 1.0,
+  "top_p": 0.95,
+  "extra_args": [],
+  "notes": "端侧 Agent 模型，原生 1M 上下文（部署时按显存调 ctx）；thinking 模式默认开启（推理过程在 reasoning_content 字段），API 请求传 chat_template_kwargs: {\"enable_thinking\": false} 可关闭；工具调用能力较弱，能识别工具但倾向直接回答。jinja 对话模板引擎默认启用（模板已内嵌 GGUF），此引擎 fork 不接受显式 --jinja 参数。fp16 变体兼作再量化原料（llama-quantize 出 q8_0/q5_k_m 等精度）。"
+}
