@@ -130,7 +130,15 @@ bash scripts/test.sh spark-x2.5-1.7b 8801  # 中文/英文对话通过，~131 to
 bash scripts/test.sh spark-x2.5-4b 8801     # 通过，~66 tok/s
 ```
 
-通过后项目即完整复原，无需其它步骤。
+```bat
+:: Windows 侧等价（交互层验证）
+start-zeus.cmd                :: 拉起 1.7B，等待就绪并打印访问地址
+chat-zeus.cmd -NoThink "你好"  :: 命令行单发（应正常返回正文）
+ui-zeus.cmd                   :: Web 控制台 http://127.0.0.1:8890/（页内启停+对话）
+stop-zeus.cmd                 :: 停止
+```
+
+三层都通过后项目即完整复原。命令详解见 [api.md](api.md)。
 
 ## 8. 已知事项
 

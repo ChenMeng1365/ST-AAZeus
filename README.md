@@ -2,12 +2,35 @@
 
 本地大模型部署与调用服务仓库：模型可插拔，通过 llama-server 提供 **OpenAI 兼容 API**（`/v1/chat/completions`），任何 OpenAI 客户端/SDK 可直接对接。
 
+## 快速开始（交互四通道）
+
+```bat
+start-zeus.cmd                        :: ① 拉起模型（默认 1.7B，等就绪后打印访问地址）
+chat-zeus.cmd "你好"                 :: ② 命令行单发直问直答
+chat-zeus.cmd                         ::    或交互式多轮对话（/exit 退出）
+ui-zeus.cmd                           :: ③ Web 对话台 http://127.0.0.1:8890/（页内可选模型/变体启停）
+curl http://<WSL-IP>:8801/v1/chat/completions ...   :: ④ API 直连（OpenAI 兼容）
+```
+
+| 通道 | 入口 | 适用 |
+|---|---|---|
+| ① 服务拉起 | `start-zeus.cmd [model] [port] [ctx] [variant]` / `stop-zeus.cmd` | 一键启停，自动健康等待 |
+| ② 命令行 | `chat-zeus.cmd ["问题"] [-NoThink] [-Port N]` | 免浏览器快问快答 / 集成进批处理 |
+| ③ Web 对话台 | `ui-zeus.cmd`（零依赖 Python） | 页内选模型/变体、启停服务、流式对话 |
+| ④ API 直连 | `POST /v1/chat/completions` + `/v1/models` `/health` `/props` | 任何 OpenAI 客户端/SDK/agent 接入 |
+
+详细用法、请求参数、SSE 流式、错误速查见 **[docs/api.md](docs/api.md)**；可运行示例见 `examples/chat_api.py`。
+
 ## 目录结构
 
 ```
 ST-AAZeus/
 ├── README.md                 # 本文档
 ├── LICENSE                   # Apache-2.0
+├── start-zeus.cmd            # 一键拉起：启服务+健康等待+打印访问地址
+├── stop-zeus.cmd             # 停止（无参数=停全部）
+├── chat-zeus.cmd             # 命令行对话入口（→ scripts/chat.ps1）
+├── ui-zeus.cmd               # Web 对话台入口（→ web/webui.py）
 ├── models/                   # 模型仓库：每个模型一个自包含目录
 │   ├── spark-x2.5-1.7b/
 │   │   ├── model.json        #   模型自描述元数据（唯一事实源）
@@ -19,41 +42,40 @@ ST-AAZeus/
 │       ├── ENGINE.md         #   引擎来源、编译环境、重新编译方法
 │       ├── bin/              #   编译产物（.gitignore 忽略，不入库）
 │       └── src-archive/      #   版本锁定源码包（35MB，随仓库分发——入库例外）
-├── scripts/                  # 通用脚本（与具体模型解耦）
-│   ├── start.sh / start.bat  # 启动：start.sh <model-id> [port] [ctx] [-d]
-│   ├── stop.sh / stop.bat    # 停止后台服务（按 .run/<model-id>.pid）
-│   ├── list-models.sh        # 列出全部已注册模型与运行状态
-│   └── test.sh               # 冒烟测试（自动拉起/健康检查/对话测试/关闭）
-├── docs/                     # 部署文档
-│   └── spark-x2.5-deploy.md  #   不入库文件清单 + 重建指南（新环境复原必读）
+├── scripts/                  # 服务脚本（WSL bash 为主）
+│   ├── start.sh / stop.sh    # 启停（model.json 驱动，支持 VARIANT 变体、后台模式；被 start-zeus.cmd 调用）
+│   ├── list-models.sh        # 列出全部已注册模型/变体/运行状态
+│   ├── test.sh               # 冒烟测试（拉起→健康检查→对话→自动关闭）
+│   └── chat.ps1              # 命令行对话实现（PowerShell 5.1，UTF-8 BOM；被 chat-zeus.cmd 调用）
+├── web/                      # Web 对话台（Python 标准库零依赖）
+│   ├── webui.py              #   静态页 + /api/chat SSE 流式转发 + 模型启停管家
+│   └── index.html            #   对话页（流式渲染、思考过程折叠、页内启停）
+├── examples/
+│   └── chat_api.py           # OpenAI 兼容 API 调用示例（单发/多轮/流式，零依赖）
+├── docs/
+│   ├── spark-x2.5-deploy.md  # 不入库文件清单 + 重建指南（含字节数校验表）
+│   └── api.md                # 交互全指南：启停/CLI/Web/API + 错误速查
 ├── logs/                     # 后台模式日志（运行时生成，不入库）
 └── .run/                     # PID 文件（运行时生成，不入库）
 ```
 
-## 快速开始
+## WSL 内启动（等价方式）
 
-引擎二进制为 **WSL/Linux 编译产物**（含 CUDA 支持），需在 WSL 中运行。
+引擎二进制为 **WSL/Linux 编译产物**（含 CUDA 支持）。Windows 侧统一走根目录 `start-zeus.cmd` 等入口（内部自动转入 WSL 执行）；已在 WSL 会话内时也可直接：
 
 ```bash
-# WSL 内
 cd /mnt/e/workspace/numeron/ST-AAZeus
 bash scripts/start.sh spark-x2.5-1.7b          # 前台运行，Ctrl+C 停止（默认 q4_k_m）
 bash scripts/start.sh spark-x2.5-1.7b 8801 4096 -d   # 后台运行
-VARIANT=fp16 bash scripts/start.sh spark-x2.5-1.7b 8802 -d   # 指定变体（如 fp16），可另开端口并行跑
+VARIANT=fp16 bash scripts/start.sh spark-x2.5-1.7b 8802 -d   # 指定变体，可另开端口并行跑
 bash scripts/stop.sh  spark-x2.5-1.7b          # 停止后台服务
 bash scripts/list-models.sh                    # 查看已注册模型/变体/状态
 bash scripts/test.sh   spark-x2.5-1.7b         # 冒烟测试（VARIANT=fp16 同样适用）
 ```
 
-```bat
-:: Windows 直接双击 / 命令行
-scripts\start.bat           :: 默认 spark-x2.5-1.7b，端口 8801，后台模式
-scripts\stop.bat            :: 停止
-```
-
 ## API 调用
 
-服务启动后即暴露 OpenAI 兼容接口：
+服务启动后即暴露 OpenAI 兼容接口（详解见 [docs/api.md](docs/api.md)）：
 
 ```bash
 curl http://127.0.0.1:8801/v1/chat/completions \
@@ -115,5 +137,6 @@ export LD_LIBRARY_PATH=/mnt/e/workspace/numeron/ST-AAZeus/engines/llama-cpp-spar
 
 - **模型自描述**：`models/<id>/model.json` 是模型配置的唯一事实源，无中心注册表，加模型不改任何脚本；
 - **引擎可插拔**：`engines/<id>/bin/` 自包含，`model.json` 的 `engine` 字段声明依赖，`LD_LIBRARY_PATH` 由启动脚本自动装配；
+- **交互四通道共享同一后端**：CLI（PowerShell）、Web（零依赖 Python）、API（OpenAI 兼容）都落在 llama-server 的 `/v1/chat/completions`，自动解析 WSL IP 规避 localhost 代理劫持；
 - **大文件不入库**：权重与编译产物被 `.gitignore` 忽略，仓库只保存结构、脚本与元数据；**新环境重建按 [docs/spark-x2.5-deploy.md](docs/spark-x2.5-deploy.md) 执行**（含精确字节数校验表），每个模型一份部署文档；
-- **默认端口 8801**：同时跑多模型时用不同端口启动（`start.sh <id> <port>`）。
+- **默认端口 8801（服务）/ 8890（Web 控制台）**：同时跑多模型时用不同端口启动（`start.sh <id> <port>`）。
